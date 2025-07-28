@@ -160,5 +160,5 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _collisionColor: {r: 0, g: 1, b: 0, a: 1}
-  _minLifetime: 3
+  _minLifetime: 2
   _maxLifetime: 5
