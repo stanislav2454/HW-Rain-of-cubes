@@ -1,6 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
+[RequireComponent(typeof(Pool))]
 public class CubeSpawner : MonoBehaviour
 {
     [SerializeField] private float _spawnInterval = 1f;
@@ -12,13 +13,34 @@ public class CubeSpawner : MonoBehaviour
 
     private void OnEnable()
     {
+        if (_cubePool == null)
+        {
+            enabled = false;
+            return;
+        }
+
+        StartSpawning();
+    }
+
+    private void OnDisable() =>
+        StopSpawning();
+
+    private void Awake() =>
+        _cubePool = GetComponent<Pool>();
+
+    private void StartSpawning()
+    {
+        StopSpawning();
         _spawningCoroutine = StartCoroutine(SpawnCubes());
     }
 
-    private void OnDisable()
+    private void StopSpawning()
     {
         if (_spawningCoroutine != null)
+        {
             StopCoroutine(_spawningCoroutine);
+            _spawningCoroutine = null;
+        }
     }
 
     private IEnumerator SpawnCubes()
@@ -32,13 +54,32 @@ public class CubeSpawner : MonoBehaviour
 
     private void SpawnSingleCube()
     {
-        CubeController cube = _cubePool.GetPooledObject();
+        if (_cubePool == null)
+        {
+            enabled = false;
+            return;
+        }
 
-        Vector3 spawnPosition = new Vector3(
-                Random.Range(-_spawnAreaRadius, _spawnAreaRadius),
-                _spawnHeight,
-                Random.Range(-_spawnAreaRadius, _spawnAreaRadius));
+        var cube = _cubePool.GetPooledObject();
 
-        cube.gameObject.transform.position = spawnPosition;
+        if (cube == null)
+            return;
+
+        cube.transform.position = GetRandomPosition();
     }
+
+    private Vector3 GetRandomPosition()
+    {
+        return new Vector3(
+            Random.Range(-_spawnAreaRadius, _spawnAreaRadius),
+            _spawnHeight,
+            Random.Range(-_spawnAreaRadius, _spawnAreaRadius)
+        );
+    }
+
+    //public void SetSpawnInterval(float newInterval)
+    //{
+    //    _spawnInterval = Mathf.Max(0.1f, newInterval);
+    //    StartSpawning();
+    //}
 }

@@ -1,67 +1,60 @@
-﻿using System.Collections.Generic;
-using UnityEngine;
+﻿using UnityEngine;
+using UnityEngine.Pool;
 
 public class Pool : MonoBehaviour
 {
-    [SerializeField] private int _poolSize = 5;
+    [SerializeField] private int _defaultCapacity = 10;
+    [SerializeField] private int _maxSize = 20;
+    [SerializeField] private bool _collectionCheck = true;
     [SerializeField] private CubeController _cubePrefab;
-    [SerializeField] private Queue<CubeController> _pooledObjects = new();
 
-    private void Start()
+    private IObjectPool<CubeController> _pool;
+
+    private void Awake()
     {
-        InitializePool();
+        _pool = new ObjectPool<CubeController>(
+            CreatePooledObject,
+            GetFromPool,
+            OnReturnedToPool,
+            OnDestroyPooledObject,
+            _collectionCheck,
+            _defaultCapacity,
+            _maxSize
+        );
     }
 
     public CubeController GetPooledObject()
     {
-        foreach (var obj in _pooledObjects)
-        {
-            if (obj.gameObject.activeInHierarchy == false)
-            {
-                obj.gameObject.SetActive(true);
+        if (_pool == null)
+            return null;
 
-                return obj;
-            }
-        }
-
-        return CreateNewPooledCube();
+        return _pool.Get();
     }
 
-    public void ReturnToPool(CubeController obj)
+    public void ReturnToPool(CubeController cube)
     {
-        obj.gameObject.transform.SetParent(transform);
-        obj.gameObject.SetActive(false);
-        _pooledObjects.Enqueue(obj);
-        obj.GetComponent<CubeController>()?.ResetCube();
+        if (_pool != null)
+            _pool.Release(cube);
     }
 
-    private void InitializePool()
-    {
-        for (int i = 0; i < _poolSize; i++)
-            CreateNewPooledCube();
-    }
+    private void OnDestroyPooledObject(CubeController cube) =>
+            Destroy(cube.gameObject);
 
-    private CubeController CreateNewPooledCube()
+    private CubeController CreatePooledObject()
     {
         CubeController cube = Instantiate(_cubePrefab, transform);
         cube.gameObject.SetActive(false);
-        _pooledObjects.Enqueue(cube);
+        cube.SetPool(_pool);
 
         return cube;
     }
 
-    private CubeController CreateNewPooledCubeManually()
+    private void GetFromPool(CubeController cube)
     {
-        GameObject obj = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        obj.SetActive(false);
-        var cube = obj.GetComponent<CubeController>();
-        _pooledObjects.Enqueue(cube);
-        // для примера
-        //cube.gameObject.transform.parent = transform;
-        //cube.gameObject.tag = "";
-        //cube.gameObject.name = "";
-        //cube.gameObject.AddComponent <Light>();
-
-        return cube;
+        cube.gameObject.SetActive(true);
+        cube.ResetCube();
     }
+
+    private void OnReturnedToPool(CubeController cube) =>
+            cube.gameObject.SetActive(false);
 }

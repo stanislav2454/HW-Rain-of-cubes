@@ -1,5 +1,6 @@
 ﻿using System.Collections;
 using UnityEngine;
+using UnityEngine.Pool;
 
 public class CubeController : MonoBehaviour
 {
@@ -7,20 +8,29 @@ public class CubeController : MonoBehaviour
     [SerializeField] float _maxLifetime = 5f;
 
     private ColorChanger _colorChanger;
-    private Pool _pool;
+    private IObjectPool<CubeController> _pool;
+    private Coroutine _lifetimeCoroutine;
     private bool _hasCollided = false;
 
-    private Coroutine _lifetimeCoroutine;
-
-    private void Awake()
-    {
+    private void Awake() =>
         _colorChanger = GetComponent<ColorChanger>();
-        _pool = GetComponentInParent<Pool>();
+
+    public void SetPool(IObjectPool<CubeController> pool) =>
+        _pool = pool;
+
+    public void ResetCube()
+    {
+        _hasCollided = false;
+        if (_lifetimeCoroutine != null)
+        {
+            StopCoroutine(_lifetimeCoroutine);
+            _lifetimeCoroutine = null;
+        }
     }
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (_hasCollided == false && collision.collider.GetComponent<Platform>())
+        if (!_hasCollided && collision.collider.GetComponent<Platform>())
         {
             _hasCollided = true;
             _colorChanger.SetRandomColor();
@@ -29,23 +39,9 @@ public class CubeController : MonoBehaviour
         }
     }
 
-    public void ResetCube()
-    {
-        _hasCollided = false;
-
-        if (_lifetimeCoroutine != null)
-        {
-            StopCoroutine(_lifetimeCoroutine);
-            _lifetimeCoroutine = null;
-        }
-    }
-
     private IEnumerator ReturnAfterLifetime(float lifetime)
     {
         yield return new WaitForSeconds(lifetime);
-        ReturnToPool();
+        _pool.Release(this);
     }
-
-    private void ReturnToPool() =>
-        _pool?.ReturnToPool(gameObject.GetComponent<CubeController>());
 }

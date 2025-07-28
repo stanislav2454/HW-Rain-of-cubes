@@ -374,7 +374,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 5.5
+      value: 3.25
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -382,7 +382,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 7.25
+      value: 5
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -439,7 +439,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 1.25
+      value: -1
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.y
@@ -447,7 +447,7 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 6.5
+      value: 4.25
       objectReference: {fileID: 0}
     - target: {fileID: 3429592155547065367, guid: 633fa8cc31bb3624c8aec60efacec99c, type: 3}
       propertyPath: m_LocalRotation.w
@@ -492,6 +492,7 @@ GameObject:
   m_Component:
   - component: {fileID: 1433731700}
   - component: {fileID: 1433731699}
+  - component: {fileID: 1433731701}
   m_Layer: 0
   m_Name: Spawner
   m_TagString: Untagged
@@ -511,10 +512,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f9b3e8ded201444db5aed0c0ebd750a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _cubePool: {fileID: 1655355748}
   _spawnInterval: 0.8
   _spawnAreaRadius: 9
   _spawnHeight: 9
+  _cubePool: {fileID: 1655355748}
 --- !u!4 &1433731700
 Transform:
   m_ObjectHideFlags: 0
@@ -530,6 +531,22 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &1433731701
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1433731698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 1a614f6b2fffacc4a87e5c8621a48066, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _defaultCapacity: 10
+  _maxSize: 20
+  _collectionCheck: 1
+  _cubePrefab: {fileID: 3693920100899869103, guid: 131c3b017eceda842b6641c95533b799, type: 3}
 --- !u!1 &1655355747
 GameObject:
   m_ObjectHideFlags: 0
@@ -559,8 +576,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 1a614f6b2fffacc4a87e5c8621a48066, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _defaultCapacity: 10
+  _maxSize: 20
+  _collectionCheck: 1
   _cubePrefab: {fileID: 3693920100899869103, guid: 131c3b017eceda842b6641c95533b799, type: 3}
-  _poolSize: 12
 --- !u!4 &1655355749
 Transform:
   m_ObjectHideFlags: 0
