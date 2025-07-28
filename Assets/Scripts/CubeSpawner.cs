@@ -12,8 +12,8 @@ public class CubeSpawner : MonoBehaviour
     private Coroutine _spawningCoroutine;
 
     private void OnEnable()
-    {
-        if (_cubePool == null)
+    {// Обычно объекты возвращают в пул через событие.
+        if (_cubePool == null)// - такие проверки приводят к скрытым багам.
         {
             enabled = false;
             return;
@@ -76,10 +76,4 @@ public class CubeSpawner : MonoBehaviour
             Random.Range(-_spawnAreaRadius, _spawnAreaRadius)
         );
     }
-
-    //public void SetSpawnInterval(float newInterval)
-    //{
-    //    _spawnInterval = Mathf.Max(0.1f, newInterval);
-    //    StartSpawning();
-    //}
 }

@@ -12,8 +12,8 @@ public class ColorChanger : MonoBehaviour
     }
 
     public void SetRandomColor()
-    {
-        if (_renderer != null && _renderer.material != null)
+    {// Обычно объекты возвращают в пул через событие.
+        if (_renderer != null && _renderer.material != null)// - такие проверки приводят к скрытым багам.
             _renderer.material.color = Random.ColorHSV();
     }
 
