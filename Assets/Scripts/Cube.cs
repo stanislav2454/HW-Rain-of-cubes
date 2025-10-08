@@ -1,26 +1,29 @@
 ﻿using System.Collections;
 using UnityEngine;
-using UnityEngine.Pool;
 
-public class CubeController : MonoBehaviour
+public class Cube : MonoBehaviour, IPoolable
 {
     [SerializeField] float _minLifetime = 2f;
     [SerializeField] float _maxLifetime = 5f;
+    [SerializeField] private Bomb _bombPrefab;
+
+    public event System.Action<Cube> OnCubeDestroyed;
 
     private ColorChanger _colorChanger;
-    private IObjectPool<CubeController> _pool;
+    private Pool<Cube> _pool;
     private Coroutine _lifetimeCoroutine;
     private bool _hasCollided = false;
 
     private void Awake() =>
         _colorChanger = GetComponent<ColorChanger>();
 
-    public void SetPool(IObjectPool<CubeController> pool) =>
-        _pool = pool;
+    public void SetPool<T>(Pool<T> pool) where T : MonoBehaviour, IPoolable =>
+        _pool = pool as Pool<Cube>;
 
     public void ResetCube()
     {
         _hasCollided = false;
+
         if (_lifetimeCoroutine != null)
         {
             StopCoroutine(_lifetimeCoroutine);
@@ -42,6 +45,17 @@ public class CubeController : MonoBehaviour
     private IEnumerator ReturnAfterLifetime(float lifetime)
     {
         yield return new WaitForSeconds(lifetime);
-        _pool.Release(this);
+        OnCubeDestroyed?.Invoke(this);
+        SpawnBomb();
+        _pool.ReturnToPool(this);
+    }
+
+    private void SpawnBomb()
+    {
+        if (_bombPrefab != null)
+        {
+            Bomb bomb = Instantiate(_bombPrefab, transform.position, Quaternion.identity);
+            bomb.Initialize();
+        }
     }
 }

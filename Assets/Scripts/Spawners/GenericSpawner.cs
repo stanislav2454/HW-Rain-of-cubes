@@ -1,37 +1,36 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(Pool))]
-public class CubeSpawner : MonoBehaviour
+[RequireComponent(typeof(Pool<>))]
+public class GenericSpawner<T> : MonoBehaviour where T : MonoBehaviour, IPoolable
 {
     [SerializeField] private float _spawnInterval = 1f;
     [SerializeField] private float _spawnAreaRadius = 5f;
     [SerializeField] private float _spawnHeight = 15f;
-    [SerializeField] private Pool _cubePool;
 
+    private Pool<T> _objectPool;
     private Coroutine _spawningCoroutine;
 
     private void OnEnable()
-    {// Обычно объекты возвращают в пул через событие.
-        if (_cubePool == null)// - такие проверки приводят к скрытым багам.
+    {
+        if (TryGetComponent(out _objectPool))
         {
-            enabled = false;
-            return;
+            StartSpawning();
         }
-
-        StartSpawning();
+        else
+        {
+            Debug.LogError($"Pool<{typeof(T).Name}> component not found!");
+            enabled = false;
+        }
     }
 
-    private void OnDisable() =>
+    private void OnDisable() => 
         StopSpawning();
-
-    private void Awake() =>
-        _cubePool = GetComponent<Pool>();
 
     private void StartSpawning()
     {
         StopSpawning();
-        _spawningCoroutine = StartCoroutine(SpawnCubes());
+        _spawningCoroutine = StartCoroutine(SpawnObjects());
     }
 
     private void StopSpawning()
@@ -43,29 +42,29 @@ public class CubeSpawner : MonoBehaviour
         }
     }
 
-    private IEnumerator SpawnCubes()
+    private IEnumerator SpawnObjects()
     {
         while (enabled)
         {
-            SpawnSingleCube();
+            SpawnSingleObject();
             yield return new WaitForSeconds(_spawnInterval);
         }
     }
 
-    private void SpawnSingleCube()
+    private void SpawnSingleObject()
     {
-        if (_cubePool == null)
+        if (_objectPool == null)
         {
             enabled = false;
             return;
         }
 
-        var cube = _cubePool.GetPooledObject();
+        var obj = _objectPool.GetPooledObject();
 
-        if (cube == null)
+        if (obj == null)
             return;
 
-        cube.transform.position = GetRandomPosition();
+        obj.transform.position = GetRandomPosition();
     }
 
     private Vector3 GetRandomPosition()
