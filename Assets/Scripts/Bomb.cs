@@ -81,11 +81,9 @@ public class Bomb : MonoBehaviour, IPoolable
 
         foreach (Collider collider in colliders)
         {
-            Rigidbody rb = collider.GetComponent<Rigidbody>();
-            if (rb != null)
-            {
-                rb.AddExplosionForce(_explosionForce, transform.position, _explosionRadius, 1f, ForceMode.Impulse);
-            }
+             collider.TryGetComponent<Rigidbody>(out Rigidbody rigidbody);
+           // if (rb != null)            
+                rigidbody?.AddExplosionForce(_explosionForce, transform.position, _explosionRadius, 1f, ForceMode.Impulse);            
         }
 
         OnBombExploded?.Invoke(this);

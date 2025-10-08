@@ -3,10 +3,10 @@ using UnityEngine.Pool;
 
 public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolable
 {
-    [SerializeField] [Range(0, 20)] private int _defaultCapacity = 10;
-    [SerializeField] [Range(1, 20)] private int _maxSize = 20;
-    //[SerializeField] private int _defaultCapacity = 10;
-    //[SerializeField] private int _maxSize = 20;
+    private const int MinPoolValue = 1;
+
+    [SerializeField] private int _defaultCapacity = 10;
+    [SerializeField] private int _maxSize = 20;
     [SerializeField] private bool _collectionCheck = true;
     [SerializeField] private T _prefab;
     [SerializeField] private string _objectTypeName;
@@ -18,7 +18,6 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
     public int SpawnedCount => _spawnedCount;
     public int CreatedCount => _createdCount;
     public int ActiveCount => _pool?.CountInactive ?? 0;
-    //public int ActiveCount => _pool?.CountActive ?? 0;
     public string ObjectType => _objectTypeName;
 
     protected virtual void Awake()
@@ -30,17 +29,19 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
             OnDestroyPooledObject,
             _collectionCheck,
             _defaultCapacity,
-            _maxSize
-        );
+            _maxSize);
     }
 
     private void OnValidate()
     {
-        if (_defaultCapacity < _maxSize)
-        {
-            return;
-        }
-        _defaultCapacity = _maxSize - 1;
+        _defaultCapacity = Mathf.Max(0, _defaultCapacity);
+        _maxSize = Mathf.Max(MinPoolValue, _maxSize);
+
+        if (_defaultCapacity > _maxSize)
+            _defaultCapacity = _maxSize;
+
+        if (string.IsNullOrEmpty(value: ObjectType))
+            Debug.LogWarning($"ObjectType Name not set for {GetType().Name} on {gameObject.name}", this);
     }
 
     public T GetPooledObject()

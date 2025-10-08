@@ -18,9 +18,6 @@ public class PoolInfoDisplay : MonoBehaviour
 
         if (_bombPool == null)
             Debug.LogError($"BombPool not found for {GetType().Name} on {gameObject.name}", this);
-        // Найти пулы в сцене
-        //_cubePool = FindObjectOfType<Pool<CubeController>>();
-        //_bombPool = FindObjectOfType<Pool<Bomb>>();
     }
 
     private void Update()

@@ -24,7 +24,7 @@ public class GenericSpawner<T> : MonoBehaviour where T : MonoBehaviour, IPoolabl
         }
     }
 
-    private void OnDisable() => 
+    private void OnDisable() =>
         StopSpawning();
 
     private void StartSpawning()
@@ -67,12 +67,8 @@ public class GenericSpawner<T> : MonoBehaviour where T : MonoBehaviour, IPoolabl
         obj.transform.position = GetRandomPosition();
     }
 
-    private Vector3 GetRandomPosition()
-    {
-        return new Vector3(
-            Random.Range(-_spawnAreaRadius, _spawnAreaRadius),
-            _spawnHeight,
-            Random.Range(-_spawnAreaRadius, _spawnAreaRadius)
-        );
-    }
+    private Vector3 GetRandomPosition() =>
+         new Vector3(Random.Range(-_spawnAreaRadius, _spawnAreaRadius),
+                     _spawnHeight,
+                     Random.Range(-_spawnAreaRadius, _spawnAreaRadius));
 }
