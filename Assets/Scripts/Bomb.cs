@@ -1,4 +1,4 @@
-using System.Collections;
+﻿using System.Collections;
 using UnityEngine;
 
 public class Bomb : MonoBehaviour, IPoolable
@@ -107,6 +107,14 @@ public class Bomb : MonoBehaviour, IPoolable
         {
             StopCoroutine(_explosionCoroutine);
             _explosionCoroutine = null;
+        }
+
+        // СБРАСЫВАЕМ физику
+        var rigidbody = GetComponent<Rigidbody>();
+        if (rigidbody != null)
+        {
+            rigidbody.velocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
         }
     }
 

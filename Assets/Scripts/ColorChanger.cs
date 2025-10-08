@@ -3,8 +3,8 @@
 [RequireComponent(typeof(Renderer))]
 public class ColorChanger : MonoBehaviour
 {
+    [SerializeField] private Material _material;
     private Renderer _renderer;
-    private Material _material;
 
     private void Awake()
     {

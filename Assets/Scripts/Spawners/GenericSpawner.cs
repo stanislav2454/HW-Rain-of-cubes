@@ -11,60 +11,64 @@ public class GenericSpawner<T> : MonoBehaviour where T : MonoBehaviour, IPoolabl
     private Pool<T> _objectPool;
     private Coroutine _spawningCoroutine;
 
+    public System.Action<bool> OnSpawnerStateChanged;
+
+    public bool IsSpawning { get; private set; }
+
     private void OnEnable()
     {
         if (TryGetComponent(out _objectPool))
-        {
             StartSpawning();
-        }
         else
-        {
-            Debug.LogError($"Pool<{typeof(T).Name}> component not found!");
             enabled = false;
-        }
     }
 
-    private void OnDisable() =>
+    private void OnDisable()
+    {
         StopSpawning();
+    }
 
     private void StartSpawning()
     {
-        StopSpawning();
-        _spawningCoroutine = StartCoroutine(SpawnObjects());
+        if (IsSpawning)
+            return;
+
+        IsSpawning = true;
+        _spawningCoroutine = StartCoroutine(SpawnRoutine());
+        OnSpawnerStateChanged?.Invoke(true);
     }
 
     private void StopSpawning()
     {
+        if (IsSpawning == false)
+            return;
+
+        IsSpawning = false;
+
         if (_spawningCoroutine != null)
         {
             StopCoroutine(_spawningCoroutine);
             _spawningCoroutine = null;
         }
+
+        OnSpawnerStateChanged?.Invoke(false);
     }
 
-    private IEnumerator SpawnObjects()
+    private IEnumerator SpawnRoutine()
     {
         while (enabled)
         {
-            SpawnSingleObject();
+            SpawnObject();
             yield return new WaitForSeconds(_spawnInterval);
         }
     }
 
-    private void SpawnSingleObject()
+    private void SpawnObject()
     {
-        if (_objectPool == null)
-        {
-            enabled = false;
-            return;
-        }
+        var obj = _objectPool?.GetPooledObject();
 
-        var obj = _objectPool.GetPooledObject();
-
-        if (obj == null)
-            return;
-
-        obj.transform.position = GetRandomPosition();
+        if (obj != null)
+            obj.transform.position = GetRandomPosition();
     }
 
     private Vector3 GetRandomPosition() =>

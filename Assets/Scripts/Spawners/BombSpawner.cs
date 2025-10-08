@@ -1,3 +1,3 @@
-public class BombSpawner : GenericSpawner<Bomb>
+﻿public class BombSpawner : GenericSpawner<Bomb>
 {
 }
