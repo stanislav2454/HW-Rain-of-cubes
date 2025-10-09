@@ -14,11 +14,14 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
     private IObjectPool<T> _pool;
     private int _spawnedCount;
     private int _createdCount;
-    private int _activeCount; // ДОБАВЛЕНО: счетчик активных объектов
+    private int _activeCount;
+
+    public event System.Action<int> OnActiveCountChanged;
+    public event System.Action<int> OnSpawnedCountChanged;
 
     public int SpawnedCount => _spawnedCount;
     public int CreatedCount => _createdCount;
-    public int ActiveCount => _activeCount; // ИСПРАВЛЕНО: используем свой счетчик
+    public int ActiveCount => _activeCount;
     public int InactiveCount => _pool?.CountInactive ?? 0;
     public string ObjectType => _objectTypeName;
 
@@ -46,13 +49,23 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
             Debug.LogWarning($"ObjectType Name not set for {GetType().Name} on {gameObject.name}", this);
     }
 
+    public void ForceNotifyAll()
+    {
+        OnActiveCountChanged?.Invoke(_activeCount);
+        OnSpawnedCountChanged?.Invoke(_spawnedCount);
+    }
+
     public T GetPooledObject()
     {
         if (_pool == null)
             return null;
 
         _spawnedCount++;
-        _activeCount++; // УВЕЛИЧИВАЕМ при получении объекта
+        OnSpawnedCountChanged?.Invoke(_spawnedCount);
+
+        _activeCount++;
+        OnActiveCountChanged?.Invoke(_activeCount);
+
         return _pool.Get();
     }
 
@@ -61,8 +74,9 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
         if (_pool != null)
         {
             _pool.Release(obj);
-            _activeCount--; // УМЕНЬШАЕМ при возврате объекта
-            _activeCount = Mathf.Max(0, _activeCount); // Защита от отрицательных значений
+            _activeCount--;
+            _activeCount = Mathf.Max(0, _activeCount);
+            OnActiveCountChanged?.Invoke(_activeCount);
         }
     }
 
@@ -74,6 +88,7 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
         T obj = Instantiate(_prefab, transform);
         obj.gameObject.SetActive(false);
         obj.SetPool(this);
+
         _createdCount++;
 
         return obj;
@@ -83,7 +98,6 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
     {
         obj.gameObject.SetActive(true);
 
-        // ВАЖНО: Вызываем Reset объекта при получении из пула
         if (obj is Cube cube)
             cube.ResetCube();
         else if (obj is Bomb bomb)
@@ -92,14 +106,4 @@ public class Pool<T> : MonoBehaviour, IPoolInfo where T : MonoBehaviour, IPoolab
 
     private void OnReturnedToPool(T obj) =>
         obj.gameObject.SetActive(false);
-
-    // ДОБАВЛЕНО: метод для получения полной статистики
-    public string GetFullStatistics()
-    {
-        return $"{ObjectType} Statistics:\n" +
-               $"  Total Spawned: {SpawnedCount}\n" +
-               $"  Total Created: {CreatedCount}\n" +
-               $"  Currently Active: {ActiveCount}\n" +
-               $"  In Pool (Available): {InactiveCount}";
-    }
 }

@@ -2,38 +2,7 @@
 
 public class CubePool : Pool<Cube>
 {
-    protected override void Awake()
-    {
-        base.Awake();
-    }
-
-    protected override Cube CreatePooledObject()
-    {
-        Cube cube = base.CreatePooledObject();
-
-        // ПОДПИСЫВАЕМСЯ на событие уничтожения куба
-        cube.OnCubeDestroyed += OnCubeDestroyed;
-
-        return cube;
-    }
-
-    protected override void OnDestroyPooledObject(Cube cube)
-    {
-        // ОТПИСЫВАЕМСЯ от события
-        if (cube != null)
-        {
-            cube.OnCubeDestroyed -= OnCubeDestroyed;
-        }
-
-        base.OnDestroyPooledObject(cube);
-    }
-
-    private void OnCubeDestroyed(Cube cube)
-    {
-        Debug.Log($"Cube destroyed event received for {cube.name}");
-        // Можно добавить дополнительную логику
-    }
-
+#if UNITY_EDITOR
     [ContextMenu("ContextMenu /ReturnAllCubes ( )")]
     public void ReturnAllCubes()
     {
@@ -47,12 +16,5 @@ public class CubePool : Pool<Cube>
                 returnedCount++;
             }
     }
-
-    // ДОБАВЛЕНО: метод для получения расширенной статистики кубов
-    public string GetCubeExtendedStatistics()
-    {
-        return $"=== CUBES EXTENDED STATS ===\n" +
-               $"{GetFullStatistics()}\n" +
-               $"Pool Capacity: {_defaultCapacity}/{_maxSize}";
-    }
+#endif
 }

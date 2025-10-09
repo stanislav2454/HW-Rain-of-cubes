@@ -4,6 +4,14 @@ using TMPro;
 
 public class PoolInfoDisplay : MonoBehaviour
 {
+    private const string CubesHeader = "=== CUBES ===";
+    private const string BombsHeader = "=== BOMBS ===";
+    private const string ActiveLabel = "Active: ";
+    private const string InPoolLabel = "In Pool: ";
+    private const string TotalLabel = "Total: ";
+    private const string TotalSpawnedLabel = "Total Spawned: ";
+    private const string ExplosionsLabel = "Explosions: ";
+
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI _cubesInfoText;
     [SerializeField] private TextMeshProUGUI _bombsInfoText;
@@ -14,8 +22,57 @@ public class PoolInfoDisplay : MonoBehaviour
     [SerializeField] private BombSpawner _bombSpawner;
 
     private StringBuilder _stringBuilder = new StringBuilder();
+    private bool _needsCubeUpdate = true;
+    private bool _needsBombUpdate = true;
+    private bool _needsVisibilityUpdate = true;
 
     private void Start()
+    {
+        ValidateReferences();
+        InitializeEventSubscriptions();
+        ForceUpdateAll();
+    }
+
+    private void OnDestroy() =>
+        UnsubscribeFromEvents();
+
+    private void Update()
+    {
+        if (_needsCubeUpdate)
+        {
+            UpdatePoolDisplay(_cubePool, _cubesInfoText, CubesHeader, showExplosions: false);
+            _needsCubeUpdate = false;
+        }
+
+        if (_needsBombUpdate)
+        {
+            UpdatePoolDisplay(_bombPool, _bombsInfoText, BombsHeader, showExplosions: true);
+            _needsBombUpdate = false;
+        }
+
+        if (_needsVisibilityUpdate)
+        {
+            UpdateBombTextVisibility();
+            _needsVisibilityUpdate = false;
+        }
+    }
+
+    private void OnCubeActiveCountChanged(int count) =>
+        _needsCubeUpdate = true;
+
+    private void OnCubeSpawnedCountChanged(int count) =>
+        _needsCubeUpdate = true;
+
+    private void OnBombActiveCountChanged(int count)
+    {
+        _needsBombUpdate = true;
+        _needsVisibilityUpdate = true;
+    }
+
+    private void OnBombSpawnedCountChanged(int count) =>
+        _needsBombUpdate = true;
+
+    private void ValidateReferences()
     {
         if (_cubePool == null)
             Debug.LogError($"CubePool not set for {GetType().Name} on {gameObject.name}", this);
@@ -25,63 +82,90 @@ public class PoolInfoDisplay : MonoBehaviour
 
         if (_bombSpawner == null)
             Debug.LogError($"BombSpawner not set for {GetType().Name} on {gameObject.name}", this);
+    }
+
+    private void InitializeEventSubscriptions()
+    {
+        if (_cubePool != null)
+        {
+            _cubePool.OnActiveCountChanged += OnCubeActiveCountChanged;
+            _cubePool.OnSpawnedCountChanged += OnCubeSpawnedCountChanged;
+            _cubePool.ForceNotifyAll();
+        }
+
+        if (_bombPool != null)
+        {
+            _bombPool.OnActiveCountChanged += OnBombActiveCountChanged;
+            _bombPool.OnSpawnedCountChanged += OnBombSpawnedCountChanged;
+            _bombPool.ForceNotifyAll();
+        }
 
         if (_bombSpawner != null)
             _bombSpawner.OnSpawnerStateChanged += OnBombSpawnerStateChanged;
+
+        ExplosiveObject.OnAnyExplosion += OnAnyExplosion;
     }
 
-    private void OnValidate()
+    private void UnsubscribeFromEvents()
     {
-        UpdateBombTextVisibility(); // ДОБАВЛЕНО: постоянная проверка
-    }
+        if (_cubePool != null)
+        {
+            _cubePool.OnActiveCountChanged -= OnCubeActiveCountChanged;
+            _cubePool.OnSpawnedCountChanged -= OnCubeSpawnedCountChanged;
+        }
 
-    private void OnDestroy()
-    {
+        if (_bombPool != null)
+        {
+            _bombPool.OnActiveCountChanged -= OnBombActiveCountChanged;
+            _bombPool.OnSpawnedCountChanged -= OnBombSpawnedCountChanged;
+        }
+
         if (_bombSpawner != null)
             _bombSpawner.OnSpawnerStateChanged -= OnBombSpawnerStateChanged;
-    }
 
-    private void Update()
-    {
-        UpdateCubeDisplay();
-        UpdateBombDisplay();
-        UpdateBombTextVisibility(); // ВАЖНО: постоянная проверка
+        ExplosiveObject.OnAnyExplosion -= OnAnyExplosion;
     }
 
     private void OnBombSpawnerStateChanged(bool isSpawning)
     {
-        UpdateBombTextVisibility();
+        _needsVisibilityUpdate = true;
         Debug.Log($"Bomb spawner state changed: {(isSpawning ? "ENABLED" : "DISABLED")}");
     }
 
-
-    private void UpdateCubeDisplay()
+    private void OnAnyExplosion()
     {
-        if (_cubePool == null || _cubesInfoText == null)
-            return;
-
-        _stringBuilder.Clear();
-        _stringBuilder.AppendLine("=== CUBES ===");
-        _stringBuilder.AppendLine($"Active: {_cubePool.ActiveCount}");
-        _stringBuilder.AppendLine($"In Pool: {_cubePool.InactiveCount}");
-        _stringBuilder.AppendLine($"Total: {_cubePool.SpawnedCount}");
-
-        _cubesInfoText.text = _stringBuilder.ToString();
+        _needsBombUpdate = true;
+        _needsVisibilityUpdate = true;
     }
 
-    private void UpdateBombDisplay()
+    private void ForceUpdateAll()
     {
-        if (_bombPool == null || _bombsInfoText == null)
+        _needsCubeUpdate = true;
+        _needsBombUpdate = true;
+        _needsVisibilityUpdate = true;
+    }
+
+    private void UpdatePoolDisplay(IPoolInfo pool, TextMeshProUGUI textElement, string header, bool showExplosions)
+    {
+        if (pool == null || textElement == null)
             return;
 
         _stringBuilder.Clear();
-        _stringBuilder.AppendLine("=== BOMBS ===");
-        _stringBuilder.AppendLine($"Active: {_bombPool.ActiveCount}");
-        _stringBuilder.AppendLine($"In Pool: {_bombPool.InactiveCount}");
-        _stringBuilder.AppendLine($"Total Spawned: {_bombPool.SpawnedCount}");
-        _stringBuilder.AppendLine($"Explosions: {_bombPool.TotalExplosions}");
+        _stringBuilder.AppendLine(header);
+        _stringBuilder.AppendLine($"{ActiveLabel}{pool.ActiveCount}");
+        _stringBuilder.AppendLine($"{InPoolLabel}{pool.InactiveCount}");
 
-        _bombsInfoText.text = _stringBuilder.ToString();
+        if (showExplosions)
+        {
+            _stringBuilder.AppendLine($"{TotalSpawnedLabel}{pool.SpawnedCount}");
+            _stringBuilder.AppendLine($"{ExplosionsLabel}{ExplosiveObject.TotalExplosions}");
+        }
+        else
+        {
+            _stringBuilder.AppendLine($"{TotalLabel}{pool.SpawnedCount}");
+        }
+
+        textElement.text = _stringBuilder.ToString();
     }
 
     private void UpdateBombTextVisibility()
@@ -89,22 +173,9 @@ public class PoolInfoDisplay : MonoBehaviour
         if (_bombsInfoText == null)
             return;
 
-        //bool shouldShow = (_bombSpawner != null && _bombSpawner.IsSpawning) ||
-        //                 (_bombPool != null && _bombPool.ActiveCount > 0);
-
-        //_bombsInfoText.gameObject.SetActive(shouldShow);
-        // ПРОСТАЯ И НАДЕЖНАЯ ПРОВЕРКА
-        //bool spawnerEnabled = _bombSpawner != null && _bombSpawner.IsSpawning;
-        //bool hasActiveBombs = _bombPool != null && _bombPool.ActiveCount > 0;
-        //bool hasExplosions = _bombPool != null && _bombPool.TotalExplosions > 0;
-
-        //bool shouldShow = spawnerEnabled || hasActiveBombs || hasExplosions;
-
-        //if (_bombsInfoText.gameObject.activeSelf != shouldShow)
-        //    Debug.Log($"Bomb Text Visibility: {shouldShow} (Spawner: {spawnerEnabled}, Active: {hasActiveBombs}, Explosions: {hasExplosions})");
         bool shouldShow = (_bombSpawner != null && _bombSpawner.IsSpawning) ||
-                        (_bombPool != null && _bombPool.ActiveCount > 0) ||
-                        (_bombPool != null && _bombPool.TotalExplosions > 0);
+                          (_bombPool != null && _bombPool.ActiveCount > 0) ||
+                          (ExplosiveObject.TotalExplosions > 0);
 
         _bombsInfoText.gameObject.SetActive(shouldShow);
     }

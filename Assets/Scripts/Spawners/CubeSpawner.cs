@@ -1,5 +1,3 @@
-﻿using UnityEngine;
-
-public class CubeSpawner : GenericSpawner<Cube>
+﻿public class CubeSpawner : GenericSpawner<Cube>
 {
 }

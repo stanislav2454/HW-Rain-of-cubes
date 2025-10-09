@@ -9,9 +9,8 @@ public class Bomb : MonoBehaviour, IPoolable
 
     [SerializeField] private float _minExplosionTime = 2f;
     [SerializeField] private float _maxExplosionTime = 5f;
-    [SerializeField] private float _explosionRadius = 5f;
-    [SerializeField] private float _explosionForce = 10f;
     [SerializeField] private Material _bombMaterial;
+    [SerializeField] private ExplosiveObject _explosiveObject;
 
     private Renderer _renderer;
     private Material _materialInstance;
@@ -24,17 +23,18 @@ public class Bomb : MonoBehaviour, IPoolable
     {
         _renderer = GetComponent<Renderer>();
         SetupMaterial();
+
+        if (TryGetComponent<ExplosiveObject>(out _explosiveObject) == false)
+            Debug.LogError($"\"ExplosiveObject\" not set for {GetType().Name} on {gameObject.name}", this);
     }
 
-    public void Initialize()
-    {
+    public void Initialize() =>
         StartExplosionCountdown();
-    }
 
-    public void SetPool<T>(Pool<T> pool) where T : MonoBehaviour, IPoolable
-    {
+    public void SetPool<T>(Pool<T> pool) where T : MonoBehaviour, IPoolable =>
         _pool = pool as Pool<Bomb>;
-    }
+
+    public void SetBombPool(BombPool bombPool) { }
 
     private void SetupMaterial()
     {
@@ -77,14 +77,10 @@ public class Bomb : MonoBehaviour, IPoolable
 
     private void Explode()
     {
-        Collider[] colliders = Physics.OverlapSphere(transform.position, _explosionRadius);
-
-        foreach (Collider collider in colliders)
-        {
-             collider.TryGetComponent<Rigidbody>(out Rigidbody rigidbody);
-           // if (rb != null)            
-                rigidbody?.AddExplosionForce(_explosionForce, transform.position, _explosionRadius, 1f, ForceMode.Impulse);            
-        }
+        if (_explosiveObject != null)
+            _explosiveObject.Explode(transform.position);
+        else
+            Debug.LogWarning("ExplosiveObject not found on Bomb!", this);
 
         OnBombExploded?.Invoke(this);
 
@@ -109,18 +105,12 @@ public class Bomb : MonoBehaviour, IPoolable
             _explosionCoroutine = null;
         }
 
-        // СБРАСЫВАЕМ физику
-        var rigidbody = GetComponent<Rigidbody>();
-        if (rigidbody != null)
+        if (TryGetComponent<Rigidbody>(out Rigidbody rigidbody))
         {
             rigidbody.velocity = Vector3.zero;
             rigidbody.angularVelocity = Vector3.zero;
         }
-    }
-
-    private void OnDrawGizmosSelected()
-    {
-        Gizmos.color = Color.red;
-        Gizmos.DrawWireSphere(transform.position, _explosionRadius);
+        else
+            Debug.LogWarning("rigidbody not found on Bomb!", this);
     }
 }
