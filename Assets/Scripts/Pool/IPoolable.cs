@@ -3,5 +3,5 @@
 public interface IPoolable
 {
     void SetPool<T>(Pool<T> pool) where T : MonoBehaviour, IPoolable;
-    void SetBombPool(BombPool bombPool); // ДОБАВЛЕНО
+    void SetBombPool(BombPool bombPool); 
 }

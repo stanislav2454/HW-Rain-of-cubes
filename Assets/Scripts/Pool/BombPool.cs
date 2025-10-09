@@ -18,9 +18,6 @@ public class BombPool : Pool<Bomb>
     private void OnDisable() =>
         Cube.OnCubeCreated -= OnCubeCreated;
 
-    private void OnCubeCreated(Cube cube) =>
-        cube.SetBombPool(this);
-
     public new Bomb GetPooledObject()
     {
         Bomb bomb = base.GetPooledObject();
@@ -30,6 +27,9 @@ public class BombPool : Pool<Bomb>
 
         return bomb;
     }
+
+    private void OnCubeCreated(Cube cube) =>
+        cube.SetBombPool(this);
 
 #if UNITY_EDITOR
     [ContextMenu("ContextMenu /ExplodeAllBombs ( )")]

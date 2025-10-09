@@ -3,5 +3,4 @@
 [RequireComponent(typeof(Collider))]
 public class Platform : MonoBehaviour
 {
-
 }

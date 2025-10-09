@@ -24,7 +24,7 @@ public class Bomb : MonoBehaviour, IPoolable
         _renderer = GetComponent<Renderer>();
         SetupMaterial();
 
-        if (TryGetComponent<ExplosiveObject>(out _explosiveObject) == false)
+        if (TryGetComponent(out _explosiveObject) == false)
             Debug.LogError($"\"ExplosiveObject\" not set for {GetType().Name} on {gameObject.name}", this);
     }
 
@@ -35,6 +35,30 @@ public class Bomb : MonoBehaviour, IPoolable
         _pool = pool as Pool<Bomb>;
 
     public void SetBombPool(BombPool bombPool) { }
+
+    public void ResetBomb()
+    {
+        if (_materialInstance != null)
+        {
+            Color resetColor = _materialInstance.color;
+            resetColor.a = AlphaMaxValue;
+            _materialInstance.color = resetColor;
+        }
+
+        if (_explosionCoroutine != null)
+        {
+            StopCoroutine(_explosionCoroutine);
+            _explosionCoroutine = null;
+        }
+
+        if (TryGetComponent(out Rigidbody rigidbody))
+        {
+            rigidbody.velocity = Vector3.zero;
+            rigidbody.angularVelocity = Vector3.zero;
+        }
+        else
+            Debug.LogWarning("rigidbody not found on Bomb!", this);
+    }
 
     private void SetupMaterial()
     {
@@ -88,29 +112,5 @@ public class Bomb : MonoBehaviour, IPoolable
             _pool.ReturnToPool(this);
         else
             Destroy(gameObject);
-    }
-
-    public void ResetBomb()
-    {
-        if (_materialInstance != null)
-        {
-            Color resetColor = _materialInstance.color;
-            resetColor.a = AlphaMaxValue;
-            _materialInstance.color = resetColor;
-        }
-
-        if (_explosionCoroutine != null)
-        {
-            StopCoroutine(_explosionCoroutine);
-            _explosionCoroutine = null;
-        }
-
-        if (TryGetComponent<Rigidbody>(out Rigidbody rigidbody))
-        {
-            rigidbody.velocity = Vector3.zero;
-            rigidbody.angularVelocity = Vector3.zero;
-        }
-        else
-            Debug.LogWarning("rigidbody not found on Bomb!", this);
     }
 }

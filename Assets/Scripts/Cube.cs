@@ -41,18 +41,6 @@ public class Cube : MonoBehaviour, IPoolable
         }
     }
 
-    private void ValidateReferences()
-    {
-        if (_pool == null)
-            Debug.LogWarning($"Pool <Cube> not set for {GetType().Name} on {gameObject.name}", this);
-
-        if (_bombPool == null)
-            Debug.LogWarning($"BombPool not set for {GetType().Name} on {gameObject.name}", this);
-
-        if (_bombPrefab == null)
-            Debug.LogWarning($"Bomb Prefab  not set for {GetType().Name} on {gameObject.name}", this);
-    }
-
     public void SetPool<T>(Pool<T> pool) where T : MonoBehaviour, IPoolable =>
         _pool = pool as Pool<Cube>;
 
@@ -80,6 +68,18 @@ public class Cube : MonoBehaviour, IPoolable
             StopCoroutine(_lifetimeCoroutine);
             _lifetimeCoroutine = null;
         }
+    }
+
+    private void ValidateReferences()
+    {
+        if (_pool == null)
+            Debug.LogWarning($"Pool <Cube> not set for {GetType().Name} on {gameObject.name}", this);
+
+        if (_bombPool == null)
+            Debug.LogWarning($"BombPool not set for {GetType().Name} on {gameObject.name}", this);
+
+        if (_bombPrefab == null)
+            Debug.LogWarning($"Bomb Prefab  not set for {GetType().Name} on {gameObject.name}", this);
     }
 
     private IEnumerator ReturnAfterLifetime(float lifetime)
