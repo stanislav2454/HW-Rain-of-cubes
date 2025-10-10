@@ -254,11 +254,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: ad1eadfb087b19a42bab671a596c2725, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  _cubeSpawner: {fileID: 1701143282}
+  _bombSpawner: {fileID: 648428310}
   _cubePool: {fileID: 1164398077}
   _bombPool: {fileID: 2138470319}
-  _cubeSpawnInterval: 1
-  _spawnRadius: 5
-  _spawnHeight: 15
 --- !u!4 &181720689
 Transform:
   m_ObjectHideFlags: 0
@@ -997,7 +996,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7f9b3e8ded201444db5aed0c0ebd750a, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _spawnInterval: 1.5
+  _spawnInterval: 1
   _spawnRadius: 5
   _spawnHeight: 15
   _cubePool: {fileID: 1164398077}
@@ -1288,7 +1287,7 @@ MonoBehaviour:
   _config:
     poolName: Bomb
     prefab: {fileID: 3568595136142397368, guid: aa38815ca40afdf45bb7bd537b683b99, type: 3}
-    initialSize: 20
+    initialSize: 10
 --- !u!1001 &8534324106380597094
 PrefabInstance:
   m_ObjectHideFlags: 0

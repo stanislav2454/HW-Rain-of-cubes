@@ -1,7 +1,7 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-[RequireComponent(typeof(ExplosiveObject))]
+[RequireComponent(typeof(ColorChanger), typeof(ExplosiveObject))]
 public class Bomb : MonoBehaviour, IPoolable
 {
     private const float MaxAlpha = 1f;

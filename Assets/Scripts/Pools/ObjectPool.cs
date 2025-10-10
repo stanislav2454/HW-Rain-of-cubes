@@ -14,11 +14,8 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour, IPoolable
     [SerializeField] private PoolConfig _config;
 
     private Queue<T> _pool = new Queue<T>();
-    private int _totalSpawned = 0;
     private int _activeCount = 0;
 
-    public string PoolName => _config.poolName;
-    public int TotalSpawned => _totalSpawned;
     public int ActiveCount => _activeCount;
     public int InactiveCount => _pool.Count;
 
@@ -38,7 +35,6 @@ public class ObjectPool<T> : MonoBehaviour where T : MonoBehaviour, IPoolable
         obj.gameObject.SetActive(true);
         obj.OnSpawn();
 
-        _totalSpawned++;
         _activeCount++;
         ObjectSpawned?.Invoke(obj);
 

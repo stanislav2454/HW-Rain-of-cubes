@@ -1,15 +1,14 @@
 ﻿using UnityEngine;
-using System.Collections;
 
 public class GameController : MonoBehaviour
 {
-    private const float Delay = 1f;
+    [Header("Spawner References")]
+    [SerializeField] private CubeSpawner _cubeSpawner;
+    [SerializeField] private BombSpawner _bombSpawner;
 
+    [Header("Pool References")]
     [SerializeField] private ObjectPool<Cube> _cubePool;
     [SerializeField] private ObjectPool<Bomb> _bombPool;
-    [SerializeField] private float _cubeSpawnInterval = 1f;
-    [SerializeField] private float _spawnRadius = 5f;
-    [SerializeField] private float _spawnHeight = 15f;
 
     private int _totalCubesSpawned = 0;
     private int _totalBombsSpawned = 0;
@@ -24,12 +23,22 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         ValidateReferences();
-        StartCoroutine(CubeSpawningRoutine());
         SetupEventHandlers();
+    }
+
+    private void OnDestroy()
+    {
+        UnsubscribeFromEvents();
     }
 
     private void ValidateReferences()
     {
+        if (_cubeSpawner == null)
+            Debug.LogError("CubeSpawner not set in GameController", this);
+
+        if (_bombSpawner == null)
+            Debug.LogError("BombSpawner not set in GameController", this);
+
         if (_cubePool == null)
             Debug.LogError("CubePool not set in GameController", this);
 
@@ -37,23 +46,11 @@ public class GameController : MonoBehaviour
             Debug.LogError("BombPool not set in GameController", this);
     }
 
-    private void OnDestroy()
-    {
-        if (_cubePool != null)
-        {
-            _cubePool.ObjectSpawned -= OnCubeSpawned;
-            _cubePool.ObjectDespawned -= OnCubeDespawned;
-        }
-
-        if (_bombPool != null)
-        {
-            _bombPool.ObjectSpawned -= OnBombSpawned;
-            _bombPool.ObjectDespawned -= OnBombDespawned;
-        }
-    }
-
     private void SetupEventHandlers()
     {
+        if (_cubeSpawner != null)
+            _cubeSpawner.CubeDestroyed += OnCubeDestroyed;
+
         if (_cubePool != null)
         {
             _cubePool.ObjectSpawned += OnCubeSpawned;
@@ -67,89 +64,40 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private IEnumerator CubeSpawningRoutine()
+    private void UnsubscribeFromEvents()
     {
-        yield return new WaitForSeconds(Delay);
+        if (_cubeSpawner != null)
+            _cubeSpawner.CubeDestroyed -= OnCubeDestroyed;
 
-        while (true)
+        if (_cubePool != null)
         {
-            yield return new WaitForSeconds(_cubeSpawnInterval);
-            SpawnCube();
+            _cubePool.ObjectSpawned -= OnCubeSpawned;
+            _cubePool.ObjectDespawned -= OnCubeDespawned;
+        }
+
+        if (_bombPool != null)
+        {
+            _bombPool.ObjectSpawned -= OnBombSpawned;
+            _bombPool.ObjectDespawned -= OnBombDespawned;
         }
     }
-
-    private void SpawnCube()
-    {
-        if (_cubePool == null)
-            return;
-
-        try
-        {
-            var cube = _cubePool.Spawn();
-            if (cube != null)
-            {
-                cube.transform.position = GetRandomSpawnPosition();
-                cube.SetDestroyCallback(OnCubeDestroyed);
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Error spawning cube: {ex.Message}");
-        }
-    }
-
-    private void SpawnBomb(Vector3 position)
-    {
-        if (_bombPool == null)
-            return;
-
-        try
-        {
-            var bomb = _bombPool.Spawn();
-            if (bomb != null)
-            {
-                bomb.transform.position = position;
-                bomb.SetExplodeCallback(OnBombExploded);
-            }
-        }
-        catch (System.Exception ex)
-        {
-            Debug.LogError($"Error spawning bomb: {ex.Message}");
-        }
-    }
-
-    private Vector3 GetRandomSpawnPosition() => new Vector3(
-        Random.Range(-_spawnRadius, _spawnRadius),
-        _spawnHeight,
-        Random.Range(-_spawnRadius, _spawnRadius));
-
-    private void OnCubeSpawned(Cube cube) =>
-        _totalCubesSpawned++;
-    private void OnBombSpawned(Bomb bomb) =>
-        _totalBombsSpawned++;
-    private void OnBombDespawned(Bomb bomb) =>
-        _totalExplosions++;
 
     private void OnCubeDestroyed(Cube cube)
     {
-        if (_cubePool != null)
-        {
-            _cubePool.Despawn(cube);
-            SpawnBomb(cube.transform.position);
-            NotifyStatisticsChanged();
-        }
+        _bombSpawner.SpawnBomb(cube.transform.position);
+        NotifyStatisticsChanged();
     }
 
-    private void OnBombExploded(Bomb bomb)
-    {
-        if (_bombPool != null)
-        {
-            _bombPool.Despawn(bomb);
-            NotifyStatisticsChanged();
-        }
-    }
+    private void OnBombSpawned(Bomb _) =>
+        _totalBombsSpawned++;
 
-    private void OnCubeDespawned(Cube cube) =>
+    private void OnCubeSpawned(Cube _) =>
+        _totalCubesSpawned++;
+
+    private void OnBombDespawned(Bomb _) =>
+        _totalExplosions++;
+
+    private void OnCubeDespawned(Cube _) =>
         NotifyStatisticsChanged();
 
     private void NotifyStatisticsChanged() =>

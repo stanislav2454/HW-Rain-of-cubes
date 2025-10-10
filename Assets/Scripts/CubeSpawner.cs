@@ -12,8 +12,17 @@ public class CubeSpawner : MonoBehaviour
 
     public event System.Action<Cube> CubeDestroyed;
 
-    private void Start() => 
+    private void Start()
+    {
+        ValidateReferences();
         StartCoroutine(SpawnRoutine());
+    }
+
+    private void ValidateReferences()
+    {
+        if (_cubePool == null)
+            Debug.LogError("CubePool not set in CubeSpawner", this);
+    }
 
     private IEnumerator SpawnRoutine()
     {
@@ -28,12 +37,21 @@ public class CubeSpawner : MonoBehaviour
 
     private void SpawnCube()
     {
-        var cube = _cubePool.Spawn(); 
+        if (_cubePool == null)
+            return;
 
-        if (cube != null)
+        try
         {
-            cube.transform.position = GetRandomPosition();
-            cube.SetDestroyCallback(OnCubeDestroyed); 
+            var cube = _cubePool.Spawn();
+            if (cube != null)
+            {
+                cube.transform.position = GetRandomPosition();
+                cube.SetDestroyCallback(OnCubeDestroyed);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            Debug.LogError($"Error spawning cube: {ex.Message}");
         }
     }
 
@@ -42,9 +60,9 @@ public class CubeSpawner : MonoBehaviour
                     _spawnHeight,
                     Random.Range(-_spawnRadius, _spawnRadius));
 
-    private void OnCubeDestroyed(Cube cube) 
+    private void OnCubeDestroyed(Cube cube)
     {
-        _cubePool.Despawn(cube); 
-        CubeDestroyed?.Invoke(cube); 
+        _cubePool.Despawn(cube);
+        CubeDestroyed?.Invoke(cube);
     }
 }
