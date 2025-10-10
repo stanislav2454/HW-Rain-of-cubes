@@ -147,7 +147,8 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 399d8e72538d10a46b2bc08ca93a78ac, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  _material: {fileID: 2100000, guid: 4412b5d381a7be14b82418454357b5f6, type: 2}
+  _opaqueMaterial: {fileID: 2100000, guid: 34b7ac5de4e1c084db128834ffa3a41b, type: 2}
+  _transparentMaterial: {fileID: 0}
 --- !u!114 &3693920100899869103
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -162,5 +163,3 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _minLifetime: 1
   _maxLifetime: 3
-  _bombPrefab: {fileID: 3568595136142397368, guid: aa38815ca40afdf45bb7bd537b683b99, type: 3}
-  _pool: {fileID: 0}
