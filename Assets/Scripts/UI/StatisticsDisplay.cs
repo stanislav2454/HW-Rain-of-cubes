@@ -10,19 +10,15 @@ public class StatisticsDisplay : MonoBehaviour
     private const string InPoolLabel = "In Pool: ";
     private const string TotalSpawnedLabel = "Total Spawned: ";
     private const string ExplosionsLabel = "Explosions: ";
-    private const string PoolNameCube = "Cube";
-    private const string PoolNameBomb = "Bomb";
 
     [Header("UI References")]
     [SerializeField] private TextMeshProUGUI _cubesInfoText;
     [SerializeField] private TextMeshProUGUI _bombsInfoText;
 
     [Header("System References")]
-    [SerializeField] private CubeSpawner _cubeSpawner;
-    [SerializeField] private BombSpawner _bombSpawner;
-    [SerializeField] private SimplePool _cubePool;
-    [SerializeField] private SimplePool _bombPool;
-    [SerializeField] private StatisticsManager _statisticsManager;
+    [SerializeField] private GameController _gameController;
+    [SerializeField] private ObjectPool<Cube> _cubePool;
+    [SerializeField] private ObjectPool<Bomb> _bombPool;
 
     private StringBuilder _stringBuilder = new StringBuilder();
 
@@ -41,72 +37,40 @@ public class StatisticsDisplay : MonoBehaviour
 
     private void ValidateReferences()
     {
-        if (_cubeSpawner == null)
-            Debug.LogError($"CubeSpawner not set for {GetType().Name} on {gameObject.name}", this);
-
-        if (_bombSpawner == null)
-            Debug.LogError($"BombSpawner not set for {GetType().Name} on {gameObject.name}", this);
-
+        if (_gameController == null)
+            Debug.LogError("GameController not set", this);
         if (_cubePool == null)
-            Debug.LogError($"CubePool not set for {GetType().Name} on {gameObject.name}", this);
-
+            Debug.LogError("CubePool not set", this);
         if (_bombPool == null)
-            Debug.LogError($"BombPool not set for {GetType().Name} on {gameObject.name}", this);
-
-        if (_statisticsManager == null)
-            _statisticsManager = FindObjectOfType<StatisticsManager>();//переделать FindObjectOfType
+            Debug.LogError("BombPool not set", this);
     }
 
     private void InitializeEventSubscriptions()
     {
-        if (_cubeSpawner != null)
-            _cubeSpawner.CubeDestroyed += OnCubeDestroyed;
-
-        if (_bombSpawner != null)
-        {
-            _bombSpawner.BombSpawned += OnBombSpawned;
-            _bombSpawner.BombExploded += OnBombExploded;
-        }
-
-        if (_statisticsManager != null)
-            _statisticsManager.StatisticsChanged += OnStatisticsChanged;
+        if (_gameController != null)
+            _gameController.StatisticsChanged += OnStatisticsChanged;
 
         if (_cubePool != null)
-            _cubePool.PoolCountChanged += OnStatisticsChanged;
+            _cubePool.ObjectSpawned += OnStatisticsChanged;
 
         if (_bombPool != null)
-            _bombPool.PoolCountChanged += OnStatisticsChanged;
+            _bombPool.ObjectSpawned += OnStatisticsChanged;
     }
 
     private void UnsubscribeFromEvents()
     {
-        if (_cubeSpawner != null)
-            _cubeSpawner.CubeDestroyed -= OnCubeDestroyed;
-
-        if (_bombSpawner != null)
-        {
-            _bombSpawner.BombSpawned -= OnBombSpawned;
-            _bombSpawner.BombExploded -= OnBombExploded;
-        }
-
-        if (_statisticsManager != null)
-            _statisticsManager.StatisticsChanged -= OnStatisticsChanged;
+        if (_gameController != null)
+            _gameController.StatisticsChanged -= OnStatisticsChanged;
 
         if (_cubePool != null)
-            _cubePool.PoolCountChanged -= OnStatisticsChanged;
+            _cubePool.ObjectSpawned -= OnStatisticsChanged;
 
         if (_bombPool != null)
-            _bombPool.PoolCountChanged -= OnStatisticsChanged;
+            _bombPool.ObjectSpawned -= OnStatisticsChanged;
     }
 
-    private void OnCubeDestroyed(Vector3 _) =>//зачем аргумент ?
-        _statisticsManager?.IncrementCubesSpawned();
-
-    private void OnBombSpawned() =>
-        _statisticsManager?.IncrementBombsSpawned();
-
-    private void OnBombExploded() =>
-        _statisticsManager?.IncrementExplosions();
+    private void OnStatisticsChanged<T>(T obj) =>
+        UpdateAllDisplays();
 
     private void OnStatisticsChanged() =>
         UpdateAllDisplays();
@@ -118,27 +82,24 @@ public class StatisticsDisplay : MonoBehaviour
         UpdateBombTextVisibility();
     }
 
-    private void UpdatePoolDisplay(SimplePool pool, TextMeshProUGUI textElement, string header, bool showExplosions)
+    private void UpdatePoolDisplay<T>(ObjectPool<T> pool, TextMeshProUGUI textElement, string header, bool showExplosions) where T : MonoBehaviour, IPoolable
     {
-        if (pool == null || textElement == null) return;
-
-        string poolName = pool.PoolName;
-        int activeCount = pool.GetActiveCount(poolName);
-        int inactiveCount = pool.GetPoolCount(poolName);
+        if (pool == null || textElement == null)
+            return;
 
         _stringBuilder.Clear();
         _stringBuilder.AppendLine(header);
-        _stringBuilder.AppendLine($"{ActiveLabel}{activeCount}");
-        _stringBuilder.AppendLine($"{InPoolLabel}{inactiveCount}");
+        _stringBuilder.AppendLine($"{ActiveLabel}{pool.ActiveCount}");
+        _stringBuilder.AppendLine($"{InPoolLabel}{pool.InactiveCount}");
 
-        if (showExplosions && _statisticsManager != null)
+        if (showExplosions && _gameController != null)
         {
-            _stringBuilder.AppendLine($"{TotalSpawnedLabel}{_statisticsManager.TotalBombsSpawned}");
-            _stringBuilder.AppendLine($"{ExplosionsLabel}{_statisticsManager.TotalExplosions}");
+            _stringBuilder.AppendLine($"{TotalSpawnedLabel}{_gameController.TotalBombsSpawned}");
+            _stringBuilder.AppendLine($"{ExplosionsLabel}{_gameController.TotalExplosions}");
         }
-        else if (_statisticsManager != null)
+        else if (_gameController != null)
         {
-            _stringBuilder.AppendLine($"{TotalSpawnedLabel}{_statisticsManager.TotalCubesSpawned}");
+            _stringBuilder.AppendLine($"{TotalSpawnedLabel}{_gameController.TotalCubesSpawned}");
         }
 
         textElement.text = _stringBuilder.ToString();
@@ -149,15 +110,10 @@ public class StatisticsDisplay : MonoBehaviour
         if (_bombsInfoText == null)
             return;
 
-        bool shouldShow = (_bombPool?.GetActiveCount(PoolNameBomb) ?? 0) > 0 ||
-                         (_statisticsManager?.TotalBombsSpawned ?? 0) > 0 ||
-                         (_statisticsManager?.TotalExplosions ?? 0) > 0;
-        
-        _bombsInfoText.gameObject.SetActive(shouldShow);
-    }
+        bool shouldShow = (_bombPool?.ActiveCount ?? 0) > 0 ||
+                         (_gameController?.TotalBombsSpawned ?? 0) > 0 ||
+                         (_gameController?.TotalExplosions ?? 0) > 0;
 
-    public void ForceUpdate()
-    {
-        UpdateAllDisplays();
+        _bombsInfoText.gameObject.SetActive(shouldShow);
     }
 }

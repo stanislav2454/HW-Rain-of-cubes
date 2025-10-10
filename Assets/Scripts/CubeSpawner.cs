@@ -3,20 +3,21 @@ using System.Collections;
 
 public class CubeSpawner : MonoBehaviour
 {
-    private const string PoolName = "Cube";
+    private const float Delay = 1f;
 
     [SerializeField] private float _spawnInterval = 1f;
     [SerializeField] private float _spawnRadius = 5f;
     [SerializeField] private float _spawnHeight = 15f;
-    [SerializeField] private SimplePool _cubePool;
+    [SerializeField] private ObjectPool<Cube> _cubePool;
 
-    public event System.Action<Vector3> CubeDestroyed;
+    public event System.Action<Cube> CubeDestroyed;
 
-    private void Start() => StartCoroutine(SpawnRoutine());
+    private void Start() => 
+        StartCoroutine(SpawnRoutine());
 
     private IEnumerator SpawnRoutine()
     {
-        yield return new WaitForSeconds(1f);
+        yield return new WaitForSeconds(Delay);
 
         while (true)
         {
@@ -27,12 +28,12 @@ public class CubeSpawner : MonoBehaviour
 
     private void SpawnCube()
     {
-        var cube = _cubePool.Get<Cube>(PoolName);
+        var cube = _cubePool.Spawn(); 
 
         if (cube != null)
         {
             cube.transform.position = GetRandomPosition();
-            cube.Initialize(OnCubeDestroyed);
+            cube.SetDestroyCallback(OnCubeDestroyed); 
         }
     }
 
@@ -41,6 +42,9 @@ public class CubeSpawner : MonoBehaviour
                     _spawnHeight,
                     Random.Range(-_spawnRadius, _spawnRadius));
 
-    private void OnCubeDestroyed(Vector3 position) => 
-        CubeDestroyed?.Invoke(position);
+    private void OnCubeDestroyed(Cube cube) 
+    {
+        _cubePool.Despawn(cube); 
+        CubeDestroyed?.Invoke(cube); 
+    }
 }
